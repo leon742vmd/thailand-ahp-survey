@@ -6,43 +6,68 @@
     <title>泰國旅遊決策 AHP 問卷</title>
     <style>
         body { font-family: "Microsoft JhengHei", sans-serif; background-color: #f0f2f5; padding: 20px; line-height: 1.6; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .container { max-width: 850px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
         .section { display: none; animation: fadeIn 0.5s; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .question-box { margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 5px solid #007bff; }
-        .slider-container { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; }
-        .slider-label { flex: 1; text-align: center; font-size: 0.9em; font-weight: bold; color: #555; }
-        input[type=range] { flex: 2; margin: 0 15px; cursor: pointer; }
+        .question-box { margin-bottom: 40px; padding: 25px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; border-left: 6px solid #007bff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .question-title { font-size: 1.1em; margin-bottom: 15px; color: #333; display: flex; justify-content: space-between; align-items: center; }
         
-        .val-display { text-align: center; color: #007bff; font-weight: bold; margin-top: 10px; font-size: 1.1em; }
+        /* 滑桿區域設計 */
+        .slider-wrapper { position: relative; padding: 0 10px; }
+        .slider-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+        .slider-label { flex: 1; text-align: center; font-size: 0.95em; font-weight: bold; color: #555; }
+        
+        /* 自訂滑桿樣式 */
+        input[type=range] { 
+            flex: 6; margin: 0 15px; cursor: pointer; 
+            -webkit-appearance: none; height: 8px; background: #ddd; border-radius: 5px; outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 24px; height: 24px; border-radius: 50%; background: #007bff; cursor: pointer; transition: background .15s ease-in-out;
+        }
+        input[type=range]::-webkit-slider-thumb:hover { background: #0056b3; }
+
+        /* 刻度尺設計 (9-7-5-3-1-3-5-7-9) */
+        .scale-marks {
+            display: flex; justify-content: space-between; 
+            margin: 0 15px; /* 對齊滑桿 */
+            padding-left: 14%; padding-right: 14%; /* 調整縮排以對齊滑桿軌道 */
+            color: #888; font-size: 0.8em; font-weight: bold;
+            pointer-events: none; /* 防止誤觸 */
+        }
+        .scale-marks span { position: relative; display: inline-block; width: 20px; text-align: center; }
+        /* 加強 1, 3, 5, 7, 9 的視覺 */
+        .scale-marks span.major { color: #333; font-size: 0.9em; }
+
+        .val-display { 
+            text-align: center; color: #fff; background-color: #007bff; 
+            font-weight: bold; margin-top: 15px; padding: 8px; border-radius: 20px; 
+            display: inline-block; width: 100%;
+        }
         
         /* 狀態列 */
-        .status-bar { padding: 15px; margin-top: 20px; border-radius: 8px; text-align: center; font-weight: bold; transition: all 0.3s; }
+        .status-bar { padding: 15px; margin-top: 20px; border-radius: 8px; text-align: center; font-weight: bold; }
         .status-ok { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .status-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         
-        .btn { display: block; width: 100%; padding: 15px; margin-top: 25px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; transition: background 0.3s; }
-        .btn:hover { background-color: #0056b3; }
+        .btn { display: block; width: 100%; padding: 15px; margin-top: 25px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; }
         .btn:disabled { background-color: #ccc; cursor: not-allowed; }
         .btn-success { background-color: #28a745; }
-        .btn-success:hover { background-color: #218838; }
 
-        .loading-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9); z-index: 9999; text-align: center; padding-top: 20%;
-        }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; text-align: center; padding-top: 20%; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>泰國旅遊方式決策 AHP 問卷</h2>
-    <p style="text-align:center; color:#666; margin-bottom:20px;">
-        說明：請滑動滑桿表達相對重要性。系統會自動檢測邏輯一致性 (CR)。<br>
-        若 CR > 0.1 (顯示紅燈)，表示邏輯衝突，需調整後才能繼續。
+    <p style="text-align:center; color:#666; margin-bottom:30px; font-size:0.9em;">
+        請依照您的感受移動滑桿。<br>
+        中間值為 <strong>1 (同等重要)</strong>，往兩側數值越大代表該項目越重要。
     </p>
 
     <form id="ahpForm">
@@ -50,32 +75,64 @@
             <h3>1. 主構面評估 (1/5)</h3>
             <div class="matrix-input" data-group="main">
                 <div class="question-box">
-                    <p><strong>經濟負擔</strong> vs <strong>交通便利性</strong></p>
-                    <div class="slider-container"><span class="slider-label">交通便利性 重要</span><input type="range" min="-9" max="9" step="1" value="0" name="q1" oninput="updateMatrix('main')"><span class="slider-label">經濟負擔 重要</span></div>
-                    <div class="val-display" id="val_q1">同等重要</div>
+                    <div class="question-title"><span>Q1. <strong>經濟負擔</strong> vs <strong>交通便利性</strong></span></div>
+                    <div class="slider-wrapper">
+                        <div class="slider-container">
+                            <span class="slider-label">交通便利性</span>
+                            <input type="range" min="-9" max="9" step="1" value="0" name="q1" oninput="updateMatrix('main')">
+                            <span class="slider-label">經濟負擔</span>
+                        </div>
+                        <div class="scale-marks">
+                            <span class="major">9</span><span></span><span class="major">7</span><span></span><span class="major">5</span><span></span><span class="major">3</span><span></span>
+                            <span class="major" style="color:#007bff">1</span>
+                            <span></span><span class="major">3</span><span></span><span class="major">5</span><span></span><span class="major">7</span><span></span><span class="major">9</span>
+                        </div>
+                    </div>
+                    <div class="val-display" id="val_q1">同等重要 (1)</div>
                 </div>
+
                 <div class="question-box">
-                    <p><strong>經濟負擔</strong> vs <strong>旅遊體驗</strong></p>
-                    <div class="slider-container"><span class="slider-label">旅遊體驗 重要</span><input type="range" min="-9" max="9" step="1" value="0" name="q2" oninput="updateMatrix('main')"><span class="slider-label">經濟負擔 重要</span></div>
-                    <div class="val-display" id="val_q2">同等重要</div>
+                    <div class="question-title"><span>Q2. <strong>經濟負擔</strong> vs <strong>旅遊體驗</strong></span></div>
+                    <div class="slider-wrapper">
+                        <div class="slider-container">
+                            <span class="slider-label">旅遊體驗</span>
+                            <input type="range" min="-9" max="9" step="1" value="0" name="q2" oninput="updateMatrix('main')">
+                            <span class="slider-label">經濟負擔</span>
+                        </div>
+                        <div class="scale-marks">
+                            <span class="major">9</span><span></span><span class="major">7</span><span></span><span class="major">5</span><span></span><span class="major">3</span><span></span>
+                            <span class="major" style="color:#007bff">1</span>
+                            <span></span><span class="major">3</span><span></span><span class="major">5</span><span></span><span class="major">7</span><span></span><span class="major">9</span>
+                        </div>
+                    </div>
+                    <div class="val-display" id="val_q2">同等重要 (1)</div>
                 </div>
+
                 <div class="question-box">
-                    <p><strong>交通便利性</strong> vs <strong>旅遊體驗</strong></p>
-                    <div class="slider-container"><span class="slider-label">旅遊體驗 重要</span><input type="range" min="-9" max="9" step="1" value="0" name="q3" oninput="updateMatrix('main')"><span class="slider-label">交通便利性 重要</span></div>
-                    <div class="val-display" id="val_q3">同等重要</div>
+                    <div class="question-title"><span>Q3. <strong>交通便利性</strong> vs <strong>旅遊體驗</strong></span></div>
+                    <div class="slider-wrapper">
+                        <div class="slider-container">
+                            <span class="slider-label">旅遊體驗</span>
+                            <input type="range" min="-9" max="9" step="1" value="0" name="q3" oninput="updateMatrix('main')">
+                            <span class="slider-label">交通便利性</span>
+                        </div>
+                        <div class="scale-marks">
+                            <span class="major">9</span><span></span><span class="major">7</span><span></span><span class="major">5</span><span></span><span class="major">3</span><span></span>
+                            <span class="major" style="color:#007bff">1</span>
+                            <span></span><span class="major">3</span><span></span><span class="major">5</span><span></span><span class="major">7</span><span></span><span class="major">9</span>
+                        </div>
+                    </div>
+                    <div class="val-display" id="val_q3">同等重要 (1)</div>
                 </div>
             </div>
-            <div id="status_main" class="status-bar status-ok">CR 值: 0.00 (邏輯完美)</div>
+            <div id="status_main" class="status-bar status-ok">CR 值: 0.00 (通過)</div>
             <button type="button" class="btn" id="btn_main" onclick="nextSection('sec2')">下一步</button>
         </div>
 
         <div class="section" id="sec2">
             <h3>2. 經濟負擔子構面 (2/5)</h3>
             <div class="matrix-input" data-group="eco">
-                <div class="question-box"><p><strong>機票費用</strong> vs <strong>當地日常花費</strong></p><div class="slider-container"><span class="slider-label">當地花費 重要</span><input type="range" min="-9" max="9" value="0" name="q4" oninput="updateMatrix('eco')"><span class="slider-label">機票費用 重要</span></div><div class="val-display" id="val_q4">同等重要</div></div>
-                <div class="question-box"><p><strong>機票費用</strong> vs <strong>住宿費用</strong></p><div class="slider-container"><span class="slider-label">住宿費用 重要</span><input type="range" min="-9" max="9" value="0" name="q5" oninput="updateMatrix('eco')"><span class="slider-label">機票費用 重要</span></div><div class="val-display" id="val_q5">同等重要</div></div>
-                <div class="question-box"><p><strong>當地日常花費</strong> vs <strong>住宿費用</strong></p><div class="slider-container"><span class="slider-label">住宿費用 重要</span><input type="range" min="-9" max="9" value="0" name="q6" oninput="updateMatrix('eco')"><span class="slider-label">當地花費 重要</span></div><div class="val-display" id="val_q6">同等重要</div></div>
-            </div>
+                <div id="eco-questions"></div> </div>
             <div id="status_eco" class="status-bar status-ok">CR 值: 0.00</div>
             <button type="button" class="btn" id="btn_eco" onclick="nextSection('sec3')">下一步</button>
         </div>
@@ -83,9 +140,7 @@
         <div class="section" id="sec3">
             <h3>3. 便利性子構面 (3/5)</h3>
             <div class="matrix-input" data-group="conv">
-                <div class="question-box"><p><strong>航班選擇多寡</strong> vs <strong>景點距離</strong></p><div class="slider-container"><span class="slider-label">景點距離 重要</span><input type="range" min="-9" max="9" value="0" name="q7" oninput="updateMatrix('conv')"><span class="slider-label">航班選擇 重要</span></div><div class="val-display" id="val_q7">同等重要</div></div>
-                <div class="question-box"><p><strong>航班選擇多寡</strong> vs <strong>大眾運輸便利性</strong></p><div class="slider-container"><span class="slider-label">大眾運輸 重要</span><input type="range" min="-9" max="9" value="0" name="q8" oninput="updateMatrix('conv')"><span class="slider-label">航班選擇 重要</span></div><div class="val-display" id="val_q8">同等重要</div></div>
-                <div class="question-box"><p><strong>景點距離</strong> vs <strong>大眾運輸便利性</strong></p><div class="slider-container"><span class="slider-label">大眾運輸 重要</span><input type="range" min="-9" max="9" value="0" name="q9" oninput="updateMatrix('conv')"><span class="slider-label">景點距離 重要</span></div><div class="val-display" id="val_q9">同等重要</div></div>
+                <div id="conv-questions"></div>
             </div>
             <div id="status_conv" class="status-bar status-ok">CR 值: 0.00</div>
             <button type="button" class="btn" id="btn_conv" onclick="nextSection('sec4')">下一步</button>
@@ -94,9 +149,7 @@
         <div class="section" id="sec4">
             <h3>4. 旅遊體驗子構面 (4/5)</h3>
             <div class="matrix-input" data-group="exp">
-                <div class="question-box"><p><strong>景觀吸引力</strong> vs <strong>文化節慶體驗</strong></p><div class="slider-container"><span class="slider-label">文化節慶 重要</span><input type="range" min="-9" max="9" value="0" name="q10" oninput="updateMatrix('exp')"><span class="slider-label">景觀吸引力 重要</span></div><div class="val-display" id="val_q10">同等重要</div></div>
-                <div class="question-box"><p><strong>景觀吸引力</strong> vs <strong>旅遊舒適度</strong></p><div class="slider-container"><span class="slider-label">旅遊舒適度 重要</span><input type="range" min="-9" max="9" value="0" name="q11" oninput="updateMatrix('exp')"><span class="slider-label">景觀吸引力 重要</span></div><div class="val-display" id="val_q11">同等重要</div></div>
-                <div class="question-box"><p><strong>文化節慶體驗</strong> vs <strong>旅遊舒適度</strong></p><div class="slider-container"><span class="slider-label">旅遊舒適度 重要</span><input type="range" min="-9" max="9" value="0" name="q12" oninput="updateMatrix('exp')"><span class="slider-label">文化節慶 重要</span></div><div class="val-display" id="val_q12">同等重要</div></div>
+                <div id="exp-questions"></div>
             </div>
             <div id="status_exp" class="status-bar status-ok">CR 值: 0.00</div>
             <button type="button" class="btn" id="btn_exp" onclick="nextSection('sec5')">下一步</button>
@@ -110,60 +163,133 @@
     </form>
 </div>
 
-<div class="loading-overlay" id="loading">
-    <h2>資料上傳中...</h2>
-    <p>請勿關閉視窗</p>
-</div>
+<div class="loading-overlay" id="loading"><h2>資料上傳中...</h2><p>請勿關閉視窗</p></div>
 
 <script>
-    // ================= 設定區 (請修改這裡) =================
-    // 請將您的 Google Web App URL 貼在下方引號中
-    const scriptURL = 'https://script.google.com/macros/library/d/1oUfde3VMNRENOxpsi56udh5WCVsudWRnxxdNQGRcaTnJTCXGWNtvYa1H/1'; 
+    // ======================================================
+    // 設定區：請將您的 Google Apps Script 網址貼在下方
+    const scriptURL = '請將您的Google Apps Script網址貼在這裡'; 
     // ======================================================
 
-    const altQuestions = [
-        {id: "q13", text: "就【機票費用】而言"}, {id: "q14", text: "就【當地日常花費】而言"},
-        {id: "q15", text: "就【住宿費用】而言"}, {id: "q16", text: "就【航班選擇多寡】而言"},
-        {id: "q17", text: "就【景點距離】而言"}, {id: "q18", text: "就【大眾運輸便利性】而言"},
-        {id: "q19", text: "就【景觀吸引力】而言"}, {id: "q20", text: "就【文化節慶體驗】而言"},
-        {id: "q21", text: "就【旅遊舒適度】而言"}
-    ];
+    // 題目資料結構 (用 JS 生成以保持 HTML 簡潔)
+    const questions = {
+        eco: [
+            {id: "q4", left: "當地日常花費", right: "機票費用"},
+            {id: "q5", left: "住宿費用", right: "機票費用"},
+            {id: "q6", left: "住宿費用", right: "當地日常花費"}
+        ],
+        conv: [
+            {id: "q7", left: "景點距離", right: "航班選擇多寡"},
+            {id: "q8", left: "大眾運輸便利性", right: "航班選擇多寡"},
+            {id: "q9", left: "大眾運輸便利性", right: "景點距離"}
+        ],
+        exp: [
+            {id: "q10", left: "文化節慶體驗", right: "景觀吸引力"},
+            {id: "q11", left: "旅遊舒適度", right: "景觀吸引力"},
+            {id: "q12", left: "旅遊舒適度", right: "文化節慶體驗"}
+        ],
+        alt: [
+            {id: "q13", text: "就【機票費用】而言"}, {id: "q14", text: "就【當地日常花費】而言"},
+            {id: "q15", text: "就【住宿費用】而言"}, {id: "q16", text: "就【航班選擇多寡】而言"},
+            {id: "q17", text: "就【景點距離】而言"}, {id: "q18", text: "就【大眾運輸便利性】而言"},
+            {id: "q19", text: "就【景觀吸引力】而言"}, {id: "q20", text: "就【文化節慶體驗】而言"},
+            {id: "q21", text: "就【旅遊舒適度】而言"}
+        ]
+    };
 
-    // 初始化方案題目
-    const altContainer = document.getElementById("alternatives-container");
-    altQuestions.forEach(q => {
-        altContainer.innerHTML += `
+    // 產生 HTML 的函數 (含刻度尺)
+    function generateHTML(list, containerId, groupName, isAlt) {
+        const container = document.getElementById(containerId);
+        let html = "";
+        list.forEach(q => {
+            let leftLabel = isAlt ? "自助旅遊" : q.left;
+            let rightLabel = isAlt ? "跟團旅遊" : q.right;
+            let title = isAlt ? q.id.replace('q','') + ". " + q.text : `<strong>${q.right}</strong> vs <strong>${q.left}</strong>`;
+            
+            html += `
             <div class="question-box">
-                <p>${q.id.replace('q','')}. ${q.text}</p>
-                <div class="slider-container"><span class="slider-label">自助旅遊 優</span><input type="range" min="-9" max="9" value="0" name="${q.id}" oninput="updateLabel('${q.id}')"><span class="slider-label">跟團旅遊 優</span></div>
-                <div class="val-display" id="val_${q.id}">兩者同等</div>
+                <div class="question-title"><span>${title}</span></div>
+                <div class="slider-wrapper">
+                    <div class="slider-container">
+                        <span class="slider-label">${leftLabel}</span>
+                        <input type="range" min="-9" max="9" step="1" value="0" name="${q.id}" oninput="${isAlt ? `updateLabel('${q.id}')` : `updateMatrix('${groupName}')`}">
+                        <span class="slider-label">${rightLabel}</span>
+                    </div>
+                    <div class="scale-marks">
+                        <span class="major">9</span><span></span><span class="major">7</span><span></span><span class="major">5</span><span></span><span class="major">3</span><span></span>
+                        <span class="major" style="color:#007bff">1</span>
+                        <span></span><span class="major">3</span><span></span><span class="major">5</span><span></span><span class="major">7</span><span></span><span class="major">9</span>
+                    </div>
+                </div>
+                <div class="val-display" id="val_${q.id}">同等重要 (1)</div>
             </div>`;
-    });
+        });
+        container.innerHTML = html;
+    }
 
+    // 初始化頁面
+    window.onload = function() {
+        generateHTML(questions.eco, 'eco-questions', 'eco', false);
+        generateHTML(questions.conv, 'conv-questions', 'conv', false);
+        generateHTML(questions.exp, 'exp-questions', 'exp', false);
+        generateHTML(questions.alt, 'alternatives-container', 'alt', true);
+        
+        ['main','eco','conv','exp'].forEach(g => updateMatrix(g));
+    };
+
+    // 數值轉換邏輯 (0 -> 1)
     function sliderToAhp(val) {
         val = parseInt(val);
         if (val === 0) return 1;
         return val > 0 ? val : 1 / Math.abs(val);
     }
     
+    // 文字顯示邏輯 (這裡將 0 顯示為 1)
     function getLabel(val, left, right) {
         val = parseInt(val);
-        if (val === 0) return "兩者同等";
+        
+        // **修正點：中間值顯示為 1**
+        if (val === 0) return "同等重要 (1)"; 
+        
         let intensity = Math.abs(val);
-        let desc = intensity === 1 ? "同等" : intensity <= 3 ? "稍微" : intensity <= 5 ? "明顯" : intensity <= 7 ? "非常" : "極端";
-        return `${val > 0 ? right : left} ${desc}優於/重要 (${intensity})`;
+        let desc = "";
+        
+        // AHP 標準語意
+        if (intensity === 1) desc = "同等";
+        else if (intensity <= 3) desc = "稍微";
+        else if (intensity <= 5) desc = "明顯";
+        else if (intensity <= 7) desc = "非常";
+        else desc = "極端";
+
+        // 決定是左邊贏還是右邊贏
+        let winner = val > 0 ? right : left;
+        let suffix = right === "跟團旅遊" ? "優於" : "重要"; // 判斷是重要性還是優劣
+
+        return `${winner} ${desc}${suffix} (${intensity})`;
     }
 
     function updateLabel(id) {
         let input = document.querySelector(`input[name="${id}"]`);
         let display = document.getElementById(`val_${id}`);
+        // 抓取左右標籤文字
         let labels = input.parentElement.querySelectorAll('.slider-label');
-        display.innerText = getLabel(input.value, labels[0].innerText.replace(' 重要','').replace(' 優',''), labels[1].innerText.replace(' 重要','').replace(' 優',''));
+        let leftText = labels[0].innerText;
+        let rightText = labels[1].innerText;
+        
+        display.innerText = getLabel(input.value, leftText, rightText);
     }
 
     function calculateCR(vals) {
-        // 標準 AHP 3x3 CR 計算
-        let m = [[1, vals[0], vals[1]], [1/vals[0], 1, vals[2]], [1/vals[1], 1/vals[2], 1]];
+        // vals[0]=q1(1vs2), vals[1]=q2(1vs3), vals[2]=q3(2vs3)
+        // 矩陣順序:
+        //   1    v12   v13
+        // 1/v12   1    v23
+        // 1/v13 1/v23   1
+        let m = [
+            [1, vals[0], vals[1]],
+            [1/vals[0], 1, vals[2]],
+            [1/vals[1], 1/vals[2], 1]
+        ];
         let n = 3, colSum = [0,0,0], weights = [0,0,0];
         
         for(let j=0; j<n; j++) for(let i=0; i<n; i++) colSum[j] += m[i][j];
@@ -180,20 +306,26 @@
     function updateMatrix(group) {
         let inputs = document.querySelectorAll(`.matrix-input[data-group="${group}"] input`);
         let vals = [];
-        inputs.forEach(input => { updateLabel(input.name); vals.push(sliderToAhp(input.value)); });
+        inputs.forEach(input => {
+            updateLabel(input.name); 
+            vals.push(sliderToAhp(input.value));
+        });
 
-        let cr = calculateCR(vals);
-        let statusDiv = document.getElementById(`status_${group}`);
-        let btn = document.getElementById(`btn_${group}`);
+        // 只有滿 3 題才算 (避免初始化報錯)
+        if(vals.length === 3) {
+            let cr = calculateCR(vals);
+            let statusDiv = document.getElementById(`status_${group}`);
+            let btn = document.getElementById(`btn_${group}`);
 
-        if (cr < 0.1001) { // 稍微放寬容許浮點數誤差
-            statusDiv.className = "status-bar status-ok";
-            statusDiv.innerText = `CR 值: ${cr.toFixed(4)} (通過)`;
-            btn.disabled = false;
-        } else {
-            statusDiv.className = "status-bar status-error";
-            statusDiv.innerText = `CR 值: ${cr.toFixed(4)} (邏輯矛盾，請調整)`;
-            btn.disabled = true;
+            if (cr < 0.1001) {
+                statusDiv.className = "status-bar status-ok";
+                statusDiv.innerText = `CR 值: ${cr.toFixed(4)} (通過)`;
+                btn.disabled = false;
+            } else {
+                statusDiv.className = "status-bar status-error";
+                statusDiv.innerText = `CR 值: ${cr.toFixed(4)} (邏輯矛盾，請調整)`;
+                btn.disabled = true;
+            }
         }
     }
 
@@ -223,7 +355,7 @@
             headers: { 'Content-Type': 'application/json' }
         }).then(() => {
             document.getElementById('loading').style.display = 'none';
-            alert("提交成功！感謝您的填寫。");
+            alert("提交成功！資料已寫入雲端。");
             window.location.reload();
         }).catch(error => {
             console.error(error);
@@ -231,11 +363,6 @@
             alert("上傳失敗，請檢查網路。");
         });
     }
-
-    window.onload = function() {
-        ['main','eco','conv','exp'].forEach(g => updateMatrix(g));
-        altQuestions.forEach(q => updateLabel(q.id));
-    };
 </script>
 
 </body>
